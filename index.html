@@ -2,9 +2,241 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Abishek's Site</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abishek's Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/c4254e24a8.js" crossorigin="anonymous"></script>
+    <script
+            type="text/javascript"
+            src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+    </script>
+    <script type="text/javascript">
+        (function() {
+            // https://dashboard.emailjs.com/admin/account
+            emailjs.init({
+                publicKey: "4n-YvwSJ2FjfcnSIP",
+            });
+        })();
+    </script>
 </head>
 <body>
-Hey this is a work in progress. Please check back later.
+<div id="header">
+    <div class="container">
+        <nav>
+            <img src="images/logo2.png" class="logo">
+            <ul id="sidemenu">
+                <li><a href="#header">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#services">Skills</a></li>
+<!--                <li><a href="#portfolio">Portfolio</a></li>-->
+                <li><a href="#contact">Contact</a></li>
+                <i class="fas fa-times" onclick="closemenu()"></i>
+            </ul>
+            <i class="fas fa-bars" onclick="openmenu()"></i>
+        </nav>
+        <div class="header-text">
+            <p>Java/Scala Developer</p>
+            <h1>Hi, I'm <span>Abishek</span><br></h1>
+        </div>
+    </div>
+</div>
+<!-- -----------about---------- -->
+<div id="about">
+    <div class="container">
+        <div class="row">
+            <div class="about-col-1">
+                <img src="images/user1.png">
+            </div>
+            <div class="about-col-2">
+                <h1 class="sub-title">About Me</h1>
+                <p>Computer Science graduate student with 6+ years of experience in building Big Data pipelines processing 200M users
+                    data for Machine Learning using Apache Spark (Java, Scala) and Backend Development (Spring, Django, Node.js).
+                    Actively seeking a Summer Internship/Co-op oppurtunities in 2024 to advance software development skills.</p>
+
+                <div class="tab-titles">
+                    <p class="tab-links active-link" onclick="opentab('skills')">Skills</p>
+                    <p class="tab-links" onclick="opentab('experience')">Professional Experience</p>
+                    <p class="tab-links" onclick="opentab('education')">Education</p>
+                </div>
+                <div class="tab-contents active-tab" id="skills">
+                    <ul>
+                        <li><span>Big Data</span><br>Design and Build data pipelines</li>
+                        <li><span>Web Development</span><br>Back end development</li>
+                        <li><span>App Development</span><br>Building Android apps</li>
+                    </ul>
+                </div>
+                <div class="tab-contents" id="experience">
+                    <ul>
+                        <li><span>2023 - 2023</span><br>Software Engineer III at Walmart Global Tech</li>
+                        <li><span>2017 - 2023</span><br>Software Engineer III at Société Générale GSC.</li>
+                    </ul>
+                </div>
+                <div class="tab-contents" id="education">
+                    <ul>
+                        <li><span>2023 - 2025</span><br>Masters's in Computer Science from Arizona State University.</li>
+                        <li><span>2013 - 2017</span><br>Bachelor's from Indian Institute of Technology, Roorkee.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ---------services---------------- -->
+<div id="services">
+    <div class="container">
+        <h1 class="sub-title">My Skills</h1>
+        <div class="services-list">
+            <div>
+                <i class="fas fa-code"></i>
+                <h2>Backend Development</h2>
+                <p>Experienced in backend development using Spring MVC, Spring Boot, and Django frameworks. Capable of designing and implementing RESTful APIs, authentication mechanisms, and data processing pipelines, ensuring high efficiency and scalability.</p>
+<!--                <a href="#">Learn more</a>-->
+            </div>
+            <div>
+                <i class="fas fa-solid fa-code-fork"></i>
+                <h2>Data Pipeline</h2>
+                <p>Proficient in building robust Big Data pipelines using Apache Spark, Kafka, and other related technologies. Skilled in handling large-scale data processing tasks efficiently, reducing model development time and enhancing overall performance.</p>
+<!--                <a href="#">Learn more</a>-->
+            </div>
+            <div>
+                <i class="fa-solid fa-cloud"></i>
+                <h2>Cloud Computing and Infrastructure Management</h2>
+                <p> Certified in Azure with expertise in managing computing systems and data processing workloads on cloud platforms. Proficient in optimizing cloud resources, reducing operational costs, and ensuring seamless integration with various services for efficient project delivery.</p>
+<!--                <a href="#">Learn more</a>-->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ----------portfolio------------ -->
+<!--<div id="portfolio">-->
+<!--    <div class="container">-->
+<!--        <h1 class="sub-title">My Projects</h1>-->
+<!--        <div class="work-list">-->
+<!--            <div class="work">-->
+<!--                <img src="images/work-1.png">-->
+<!--                <div class="layer">-->
+<!--                    <h3>Social Media App</h3>-->
+<!--                    <p>The app connects you yo the talented people around the world. Download it from play store.</p>-->
+<!--                    <a href="#"><i class="fas fa-external-link-alt"></i></a>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--            <div class="work">-->
+<!--                <img src="images/work-2.png">-->
+<!--                <div class="layer">-->
+<!--                    <h3>Music App</h3>-->
+<!--                    <p>The app connects you yo the talented people around the world. Download it from play store.</p>-->
+<!--                    <a href="#"><i class="fas fa-external-link-alt"></i></a>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--            <div class="work">-->
+<!--                <img src="images/work-3.png">-->
+<!--                <div class="layer">-->
+<!--                    <h3>Online Shopping App</h3>-->
+<!--                    <p>The app connects you yo the talented people around the world. Download it from play store.</p>-->
+<!--                    <a href="#"><i class="fas fa-external-link-alt"></i></a>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--        <a href="#" class="btn">See more</a>-->
+<!--    </div>-->
+<!--</div>-->
+<!-- ----------contact------------- -->
+<div id="contact">
+    <div class="container">
+        <div class="row">
+            <div class="contact-left">
+                <h1 class="sub-title">Contact Me</h1>
+                <p><a href="mailto:abi@abishek.tech"><i class="fas fa-at"></i>abi@abishek.tech</a> </p>
+<!--                <p><i class="fas fa-phone-square-alt"></i> 0123456789</p>-->
+                <div class="social-icons">
+<!--                    <a href="https://facebook.com/"><i class="fab fa-facebook"></i></a>-->
+<!--                    <a href=""><i class="fab fa-twitter-square"></i></a>-->
+                    <a href="https://www.instagram.com/abishek_ren/"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.linkedin.com/in/ab1shek/"><i class="fab fa-linkedin"></i></a>
+                    <a href="https://medium.com/@abi1"><i class="fab fa-medium"></i></a>
+                </div>
+                <a href="images/my-cv.pdf" download class="btn btn2">Download CV<i class="fa-solid fa-download"></i> </a>
+            </div>
+            <div class="contact-right">
+                <form name="submit-to-google-sheet" id="contact-form">
+                    <input type="text" name="from_name" placeholder="Your Name" required>
+                    <input type="email" name="reply_to" placeholder="Your Email" required>
+                    <textarea name="message" rows="6" placeholder="Your Message"></textarea>
+                    <button type="submit" class="btn btn2" value="Send">Submit</button>
+                </form>
+                <span id="msg"></span>
+            </div>
+        </div>
+    </div>
+    <div class="copyright">
+        <p>Copyright © 2024 Abishek. Made with <i class="fas fa-heart"></i> by <a href="https://www.youtube.com/channel/UCkjoHfkLEy7ZT4bA2myJ8xA?sub_confirmation=1">Easy Tutorials</a></p>
+    </div>
+</div>
+
+
+
+<script>
+
+    var tablinks = document.getElementsByClassName("tab-links");
+    var tabcontents = document.getElementsByClassName("tab-contents");
+
+    function opentab(tabname){
+        for(tablink of tablinks){
+            tablink.classList.remove("active-link");
+        }
+        for(tabcontent of tabcontents){
+            tabcontent.classList.remove("active-tab");
+        }
+        event.currentTarget.classList.add("active-link");
+        document.getElementById(tabname).classList.add("active-tab");
+    }
+
+</script>
+
+<script>
+
+    var sidemeu = document.getElementById("sidemenu");
+
+    function openmenu(){
+        sidemeu.style.right = "0";
+    }
+    function closemenu(){
+        sidemeu.style.right = "-200px";
+    }
+
+</script>
+<script>
+    const scriptURL = '< add you own link here >' // add your own app script link here
+    const form = document.forms['submit-to-google-sheet']
+    const msg = document.getElementById("msg")
+  
+    form.addEventListener('submit', e => {
+      e.preventDefault()
+      fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+        .then(response => {
+            msg.innerHTML = "Message sent successfully"
+            setTimeout(function(){
+                msg.innerHTML = ""
+            },5000)
+            form.reset()
+        })
+        .catch(error => console.error('Error!', error.message))
+    })
+  </script>
+<script type="text/javascript">
+    window.onload = function() {
+        document.getElementById('contact-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            // these IDs from the previous steps
+            emailjs.sendForm('service_lk0dvcm', 'template_fyulgm8', this)
+                .then(() => {
+                    console.log('SUCCESS!');
+                }, (error) => {
+                    console.log('FAILED...', error);
+                });
+        });
+    }
+</script>
 </body>
 </html>
