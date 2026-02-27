@@ -1,245 +1,686 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abishek's Portfolio</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://kit.fontawesome.com/c4254e24a8.js" crossorigin="anonymous"></script>
-    <script src="https://kit.fontawesome.com/08a5654b44.js" crossorigin="anonymous"></script>
-    <script
-            type="text/javascript"
-            src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
-    </script>
-    <script type="text/javascript">
-        (function() {
-            // https://dashboard.emailjs.com/admin/account
-            emailjs.init({
-                publicKey: "4n-YvwSJ2FjfcnSIP",
-            });
-        })();
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🔍 Object Detector</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      background: #0f1117;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      flex-shrink: 0;
+      padding: 14px 24px;
+      background: #1a1d27;
+      border-bottom: 1px solid #2d3148;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 600; color: #a5b4fc; }
+    header .subtitle { font-size: 0.78rem; color: #64748b; }
+
+    #status-pill {
+      margin-left: auto;
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+    #status-pill.running { background: #052e16; color: #4ade80; border-color: #166534; }
+    #status-pill.loading { background: #1e1a05; color: #fbbf24; border-color: #92400e; }
+
+    main {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+
+    /* ── Camera ── */
+    #camera-wrap {
+      flex: 1;
+      position: relative;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #video {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    #canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    #placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      color: #475569;
+    }
+    #placeholder svg { width: 72px; height: 72px; opacity: .35; }
+    #placeholder p { font-size: 0.9rem; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      background: #1a1d27;
+      border-left: 1px solid #2d3148;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    #sidebar-header {
+      flex-shrink: 0;
+      padding: 14px 16px;
+      border-bottom: 1px solid #2d3148;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #sidebar-header h2 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    #obj-count {
+      font-size: 0.72rem;
+      background: #312e81;
+      color: #a5b4fc;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    #object-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-height: 0;
+    }
+    #object-list::-webkit-scrollbar { width: 4px; }
+    #object-list::-webkit-scrollbar-track { background: transparent; }
+    #object-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+    .obj-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 9px 10px;
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .obj-item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .obj-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: capitalize;
+      flex: 1;
+    }
+
+    .obj-score {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      min-width: 34px;
+      text-align: right;
+    }
+
+    .obj-bar-wrap {
+      height: 3px;
+      background: #21262d;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .obj-bar {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .4s ease;
+    }
+
+    .emotion-section {
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      border-top: 1px solid #21262d;
+      padding-top: 6px;
+    }
+
+    .emotion-section-title {
+      font-size: 0.68rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 2px;
+    }
+
+    .emo-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .emo-row.dominant .emo-label { color: #c4b5fd; font-weight: 700; }
+
+    .emo-label {
+      font-size: 0.72rem;
+      color: #64748b;
+      width: 72px;
+      flex-shrink: 0;
+      text-transform: capitalize;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .emo-bar-wrap {
+      flex: 1;
+      height: 5px;
+      background: #21262d;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .emo-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .4s ease;
+    }
+    .emo-row.dominant .emo-bar { background: #818cf8; }
+    .emo-bar { background: #334155; }
+
+    .emo-pct {
+      font-size: 0.68rem;
+      color: #64748b;
+      width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .emo-row.dominant .emo-pct { color: #a5b4fc; }
+
+    .empty-msg {
+      color: #475569;
+      font-size: 0.83rem;
+      text-align: center;
+      margin-top: 36px;
+      line-height: 1.6;
+    }
+
+    /* ── Controls ── */
+    #controls {
+      flex-shrink: 0;
+      padding: 10px 12px;
+      border-top: 1px solid #2d3148;
+      display: flex;
+      gap: 7px;
+    }
+
+    button {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    button:hover:not(:disabled) { opacity: .85; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+
+    #btn-start { background: #4f46e5; color: #fff; }
+    #btn-pause { background: #78350f; color: #fcd34d; }
+    #btn-stop  { background: #1e293b; color: #94a3b8; }
+
+    #footer-info {
+      flex-shrink: 0;
+      font-size: 0.68rem;
+      color: #475569;
+      text-align: center;
+      padding: 3px 12px 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
 </head>
 <body>
-<div id="header">
-    <div class="container">
-        <nav>
-            <img src="images/logo3.png" class="logo">
-            <ul id="sidemenu">
-                <li><a href="#header">Home123123</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#services">Skills</a></li>
-<!--                <li><a href="#portfolio">Portfolio</a></li>-->
-                <li><a href="#contact">Contact</a></li>
-                <i class="fas fa-times" onclick="closemenu()"></i>
-            </ul>
-            <i class="fas fa-bars" onclick="openmenu()"></i>
-        </nav>
-        <div class="header-text">
-            <p>Java Developer</p>
-            <h1>Hi, I'm <span>Abishek</span><br></h1>
-        </div>
-    </div>
-</div>
-<!-- -----------about---------- -->
-<div id="about">
-    <div class="container">
-        <div class="row">
-            <div class="about-col-1">
-                <img src="images/user1.png">
-            </div>
-            <div class="about-col-2">
-                <h1 class="sub-title">About Me</h1>
-                <p>Computer Science graduate student with 6+ years of experience in building Big Data pipelines processing 200M users
-                    data for Machine Learning using Apache Spark (Java, Scala) and Backend Development (Spring, Django, Node.js).
-                    Actively seeking a Summer Internship/Co-op oppurtunities in 2024 to advance software development skills.</p>
 
-                <div class="tab-titles">
-                    <p class="tab-links active-link" onclick="opentab('skills')">Skills</p>
-                    <p class="tab-links" onclick="opentab('experience')">Professional Experience</p>
-                    <p class="tab-links" onclick="opentab('education')">Education</p>
-                </div>
-                <div class="tab-contents active-tab" id="skills">
-                    <ul>
-                        <li><span>Big Data</span><br>Design and Build data pipelines</li>
-                        <li><span>Web Development</span><br>Back end development</li>
-                        <li><span>App Development</span><br>Building Android apps</li>
-                    </ul>
-                </div>
-                <div class="tab-contents" id="experience">
-                    <ul>
-                        <li><span>2023 - 2023</span><br>Software Engineer III at Walmart Global Tech</li>
-                        <li><span>2017 - 2023</span><br>Software Engineer III at Société Générale GSC.</li>
-                    </ul>
-                </div>
-                <div class="tab-contents" id="education">
-                    <ul>
-                        <li><span>2023 - 2025</span><br>Masters's in Computer Science from Arizona State University.</li>
-                        <li><span>2013 - 2017</span><br>Bachelor's from Indian Institute of Technology, Roorkee.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- ---------services---------------- -->
-<div id="services">
-    <div class="container">
-        <h1 class="sub-title">My Skills</h1>
-        <div class="services-list">
-            <div>
-                <i class="fas fa-code"></i>
-                <h2>Backend Development</h2>
-                <p>Experienced in backend development using Spring MVC, Spring Boot, and Django frameworks. Capable of designing and implementing RESTful APIs, authentication mechanisms, and data processing pipelines, ensuring high efficiency and scalability.</p>
-<!--                <a href="#">Learn more</a>-->
-            </div>
-            <div>
-                <i class="fas fa-solid fa-code-fork"></i>
-                <h2>Data Pipeline</h2>
-                <p>Proficient in building robust Big Data pipelines using Apache Spark, Kafka, and other related technologies. Skilled in handling large-scale data processing tasks efficiently, reducing model development time and enhancing overall performance.</p>
-<!--                <a href="#">Learn more</a>-->
-            </div>
-            <div>
-                <i class="fa-solid fa-cloud"></i>
-                <h2>Cloud Computing and Infrastructure Management</h2>
-                <p> Certified in Azure with expertise in managing computing systems and data processing workloads on cloud platforms. Proficient in optimizing cloud resources, reducing operational costs, and ensuring seamless integration with various services for efficient project delivery.</p>
-<!--                <a href="#">Learn more</a>-->
-            </div>
-        </div>
-    </div>
-</div>
-<!-- ----------portfolio------------ -->
-<!--<div id="portfolio">-->
-<!--    <div class="container">-->
-<!--        <h1 class="sub-title">My Projects</h1>-->
-<!--        <div class="work-list">-->
-<!--            <div class="work">-->
-<!--                <img src="images/work-1.png">-->
-<!--                <div class="layer">-->
-<!--                    <h3>Social Media App</h3>-->
-<!--                    <p>The app connects you yo the talented people around the world. Download it from play store.</p>-->
-<!--                    <a href="#"><i class="fas fa-external-link-alt"></i></a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            <div class="work">-->
-<!--                <img src="images/work-2.png">-->
-<!--                <div class="layer">-->
-<!--                    <h3>Music App</h3>-->
-<!--                    <p>The app connects you yo the talented people around the world. Download it from play store.</p>-->
-<!--                    <a href="#"><i class="fas fa-external-link-alt"></i></a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            <div class="work">-->
-<!--                <img src="images/work-3.png">-->
-<!--                <div class="layer">-->
-<!--                    <h3>Online Shopping App</h3>-->
-<!--                    <p>The app connects you yo the talented people around the world. Download it from play store.</p>-->
-<!--                    <a href="#"><i class="fas fa-external-link-alt"></i></a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--        <a href="#" class="btn">See more</a>-->
-<!--    </div>-->
-<!--</div>-->
-<!-- ----------contact------------- -->
-<div id="contact">
-    <div class="container">
-        <div class="row">
-            <div class="contact-left">
-                <h1 class="sub-title">Contact Me</h1>
-                <p><a href="mailto:abi@abishek.tech"><i class="fas fa-at"></i>abi@abishek.tech</a> </p>
-<!--                <p><i class="fas fa-phone-square-alt"></i> 0123456789</p>-->
-                <div class="social-icons">
-<!--                    <a href="https://facebook.com/"><i class="fab fa-facebook"></i></a>-->
-<!--                    <a href=""><i class="fab fa-twitter-square"></i></a>-->
-                    <a href="https://www.instagram.com/abishek_ren/"><i class="fab fa-instagram"></i></a>
-                    <a href="https://www.linkedin.com/in/ab1shek/"><i class="fab fa-linkedin"></i></a>
-                    <a href="https://medium.com/@abi1"><i class="fab fa-medium"></i></a>
-                    <a href="https://github.com/abishek-ren"><i class="fa-brands fa-github"></i></a>
-                    <a href="https://leetcode.com/thegrabishek/"><i class="fa-solid fa-laptop-code"></i></a>
-                </div>
-                <a href="images/ASU_Abishek_SDE.pdf" download class="btn btn2">Download CV<i class="fa-solid fa-download"></i> </a>
-            </div>
-            <div class="contact-right">
-                <form name="submit-to-google-sheet" id="contact-form">
-                    <input type="text" name="from_name" placeholder="Your Name" required>
-                    <input type="email" name="reply_to" placeholder="Your Email" required>
-                    <textarea name="message" rows="6" placeholder="Your Message"></textarea>
-                    <button type="submit" class="btn btn2" value="Send">Submit</button>
-                </form>
-                <span id="msg"></span>
-            </div>
-        </div>
-    </div>
-    <div class="copyright">
-        <p>Copyright © 2024 Abishek. Image courtesy <a href="https://www.instagram.com/im__cbh/">Chatrash</a></p>
-    </div>
-</div>
+<header>
+  <span style="font-size:1.35rem">🔍</span>
+  <h1>Object Detector</h1>
+  <span class="subtitle">COCO-SSD + Emotion Detection</span>
+  <div id="status-pill">Idle</div>
+</header>
 
+<main>
+  <div id="camera-wrap">
+    <div id="placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <path d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+      </svg>
+      <p>Click <strong>Start</strong> to begin</p>
+    </div>
+    <video id="video" autoplay muted playsinline style="display:none"></video>
+    <canvas id="canvas"></canvas>
+  </div>
 
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <h2>Detected Objects</h2>
+      <span id="obj-count">0</span>
+    </div>
+    <div id="object-list">
+      <p class="empty-msg">No objects detected yet.</p>
+    </div>
+    <div id="footer-info">
+      <span id="fps-label"></span>
+      <span id="emotion-status"></span>
+    </div>
+    <div id="controls">
+      <button id="btn-start">▶ Start</button>
+      <button id="btn-pause" disabled>⏸ Pause</button>
+      <button id="btn-stop" disabled>⏹ Stop</button>
+    </div>
+  </aside>
+</main>
 
 <script>
+  const video         = document.getElementById('video');
+  const canvas        = document.getElementById('canvas');
+  const ctx           = canvas.getContext('2d');
+  const placeholder   = document.getElementById('placeholder');
+  const objList       = document.getElementById('object-list');
+  const objCount      = document.getElementById('obj-count');
+  const statusPill    = document.getElementById('status-pill');
+  const fpsLabel      = document.getElementById('fps-label');
+  const emotionStatus = document.getElementById('emotion-status');
+  const btnStart      = document.getElementById('btn-start');
+  const btnPause      = document.getElementById('btn-pause');
+  const btnStop       = document.getElementById('btn-stop');
+  const cameraWrap    = document.getElementById('camera-wrap');
 
-    var tablinks = document.getElementsByClassName("tab-links");
-    var tabcontents = document.getElementsByClassName("tab-contents");
+  // ── State ──────────────────────────────────────────────────────────────
+  let cocoModel     = null;
+  let faceModelsLoaded = false;
+  let stream        = null;
+  let running       = false;
+  let paused        = false;
+  let rafId         = null;
+  let detectTimer   = null;
 
-    function opentab(tabname){
-        for(tablink of tablinks){
-            tablink.classList.remove("active-link");
-        }
-        for(tabcontent of tabcontents){
-            tabcontent.classList.remove("active-tab");
-        }
-        event.currentTarget.classList.add("active-link");
-        document.getElementById(tabname).classList.add("active-tab");
+  // Latest predictions from COCO-SSD (used by render loop)
+  let lastPredictions = [];
+  // Map: label -> { score, color, emotion, lastSeen }
+  const seenObjects = new Map();
+  const OBJECT_TTL  = 2500;
+
+  // FPS tracking
+  let fpsFrames = 0, fpsLast = 0;
+
+  // ── Colors ─────────────────────────────────────────────────────────────
+  const colorCache = {};
+  function labelColor(label) {
+    if (!colorCache[label]) {
+      let h = 0;
+      for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) & 0xFFFF;
+      colorCache[label] = `hsl(${h % 360}, 70%, 62%)`;
+    }
+    return colorCache[label];
+  }
+
+  const EMOTION_EMOJI = {
+    happy: '😄', sad: '😢', angry: '😠',
+    fearful: '😨', disgusted: '🤢', surprised: '😲', neutral: '😐'
+  };
+
+  function dominantEmotion(expressions) {
+    return Object.entries(expressions).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+  }
+
+  function setStatus(text, cls) {
+    statusPill.textContent = text;
+    statusPill.className = cls || '';
+  }
+
+  // ── Model loading ───────────────────────────────────────────────────────
+  async function loadModels() {
+    setStatus('Loading models…', 'loading');
+    btnStart.disabled = true;
+
+    // Load COCO-SSD
+    cocoModel = await cocoSsd.load();
+
+    // Load face-api models (tinyFaceDetector + faceExpression)
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+    try {
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+      ]);
+      faceModelsLoaded = true;
+      emotionStatus.textContent = '😊 emotions ready';
+    } catch (e) {
+      console.warn('face-api models failed to load:', e);
+      emotionStatus.textContent = '⚠️ emotions failed';
+      emotionStatus.style.color = '#f87171';
     }
 
-</script>
+    btnStart.disabled = false;
+    setStatus('Ready', '');
+  }
 
-<script>
+  // ── Detection loop (runs on interval, independent of render) ────────────
+  let isDetecting = false;
 
-    var sidemeu = document.getElementById("sidemenu");
+  async function runDetection() {
+    if (!running || paused || isDetecting || video.readyState < 2) return;
+    isDetecting = true;
+    try {
+      const predictions = await cocoModel.detect(video);
+      if (!running) { isDetecting = false; return; }
 
-    function openmenu(){
-        sidemeu.style.right = "0";
-    }
-    function closemenu(){
-        sidemeu.style.right = "-200px";
-    }
+      const now = Date.now();
 
-</script>
-<script>
-    const scriptURL = '< add you own link here >' // add your own app script link here
-    const form = document.forms['submit-to-google-sheet']
-    const msg = document.getElementById("msg")
-  
-    form.addEventListener('submit', e => {
-      e.preventDefault()
-      fetch(scriptURL, { method: 'POST', body: new FormData(form)})
-        .then(response => {
-            msg.innerHTML = "Message sent successfully"
-            setTimeout(function(){
-                msg.innerHTML = ""
-            },5000)
-            form.reset()
-        })
-        .catch(error => console.error('Error!', error.message))
-    })
-  </script>
-<script type="text/javascript">
-    window.onload = function() {
-        document.getElementById('contact-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            // these IDs from the previous steps
-            emailjs.sendForm('service_lk0dvcm', 'template_fyulgm8', this)
-                .then(() => {
-                    console.log('SUCCESS!');
-                }, (error) => {
-                    console.log('FAILED...', error);
-                });
+      // Update persistent object registry
+      // Group predictions by label, keep highest score per label
+      const bestPerLabel = {};
+      predictions.forEach(p => {
+        if (!bestPerLabel[p.class] || p.score > bestPerLabel[p.class].score)
+          bestPerLabel[p.class] = p;
+      });
+
+      // Run face expression detection if a person was found
+      let faceExpressions = null;
+      if (faceModelsLoaded && bestPerLabel['person']) {
+        try {
+          const result = await faceapi
+            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3 }))
+            .withFaceExpressions();
+          if (result) faceExpressions = result.expressions;
+        } catch (_) {}
+      }
+
+      // Update seenObjects map
+      for (const [lbl, pred] of Object.entries(bestPerLabel)) {
+        const existing = seenObjects.get(lbl);
+        seenObjects.set(lbl, {
+          score: pred.score,
+          color: labelColor(lbl),
+          expressions: (lbl === 'person' && faceExpressions)
+            ? faceExpressions
+            : (existing ? existing.expressions : null),
+          lastSeen: now,
         });
+      }
+
+      // Evict stale entries
+      for (const [lbl, entry] of seenObjects)
+        if (now - entry.lastSeen > OBJECT_TTL) seenObjects.delete(lbl);
+
+      // Store for render loop
+      lastPredictions = predictions;
+
+      // Update sidebar
+      renderSidebar();
+
+    } catch (e) {
+      console.error('Detection error:', e);
     }
+    isDetecting = false;
+  }
+
+  // ── Render loop (rAF, draws boxes each frame) ───────────────────────────
+  function renderFrame(ts) {
+    if (!running) return;
+
+    // FPS (only count when not paused)
+    if (!paused) {
+      fpsFrames++;
+      if (ts - fpsLast >= 1000) {
+        fpsLabel.textContent = `${fpsFrames} fps`;
+        fpsFrames = 0;
+        fpsLast = ts;
+      }
+    }
+
+    // Sync canvas to container
+    const wrapRect = cameraWrap.getBoundingClientRect();
+    if (canvas.width !== wrapRect.width || canvas.height !== wrapRect.height) {
+      canvas.width  = wrapRect.width;
+      canvas.height = wrapRect.height;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (lastPredictions.length > 0 && video.videoWidth > 0) {
+      const videoRect = video.getBoundingClientRect();
+      const offsetX = videoRect.left - wrapRect.left;
+      const offsetY = videoRect.top  - wrapRect.top;
+      const scaleX  = videoRect.width  / video.videoWidth;
+      const scaleY  = videoRect.height / video.videoHeight;
+
+      lastPredictions.forEach(({ class: lbl, score, bbox }) => {
+        const color = labelColor(lbl);
+        const [x, y, w, h] = bbox;
+        const sx = x * scaleX + offsetX;
+        const sy = y * scaleY + offsetY;
+        const sw = w * scaleX;
+        const sh = h * scaleY;
+
+        // Bounding box
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(sx, sy, sw, sh);
+
+        // Build label text
+        const entry = seenObjects.get(lbl);
+        const dominant = entry?.expressions ? dominantEmotion(entry.expressions) : null;
+        const emoji = dominant ? (EMOTION_EMOJI[dominant] || '') : '';
+        const text  = `${lbl} ${Math.round(score * 100)}%${emoji ? ' ' + emoji : ''}`;
+
+        ctx.font = 'bold 13px system-ui, sans-serif';
+        const tw = ctx.measureText(text).width;
+        const tagH = 22;
+
+        // Tag background
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(sx, sy - tagH - 2, tw + 12, tagH, 4);
+        ctx.fill();
+
+        // Tag text
+        ctx.fillStyle = '#000';
+        ctx.fillText(text, sx + 6, sy - 7);
+      });
+    }
+
+    rafId = requestAnimationFrame(renderFrame);
+  }
+
+  // ── Sidebar render ───────────────────────────────────────────────────────
+  function renderSidebar() {
+    const sorted = [...seenObjects.entries()]
+      .sort((a, b) => b[1].score - a[1].score);
+
+    objCount.textContent = sorted.length;
+
+    if (sorted.length === 0) {
+      objList.innerHTML = '<p class="empty-msg">Scanning…<br><span style="font-size:.75rem">Point camera at objects</span></p>';
+      return;
+    }
+
+    objList.innerHTML = sorted.map(([lbl, { score, color, expressions }]) => {
+      const pct = Math.round(score * 100);
+
+      // Build full emotion breakdown if this is a person with expressions
+      let emotionHtml = '';
+      if (expressions) {
+        const dominant = dominantEmotion(expressions);
+        const emoRows = Object.entries(expressions)
+          .sort((a, b) => b[1] - a[1])
+          .map(([emo, val]) => {
+            const epct = Math.round(val * 100);
+            const isDominant = emo === dominant;
+            return `
+              <div class="emo-row${isDominant ? ' dominant' : ''}">
+                <span class="emo-label">${EMOTION_EMOJI[emo] || ''} ${emo}</span>
+                <div class="emo-bar-wrap">
+                  <div class="emo-bar" style="width:${epct}%${isDominant ? ';background:#818cf8' : ''}"></div>
+                </div>
+                <span class="emo-pct">${epct}%</span>
+              </div>`;
+          }).join('');
+        emotionHtml = `
+          <div class="emotion-section">
+            <div class="emotion-section-title">Emotions</div>
+            ${emoRows}
+          </div>`;
+      }
+
+      return `
+        <div class="obj-item">
+          <div class="obj-item-row">
+            <span class="obj-label" style="color:${color}">${lbl}</span>
+            <span class="obj-score">${pct}%</span>
+          </div>
+          <div class="obj-bar-wrap">
+            <div class="obj-bar" style="width:${pct}%;background:${color}"></div>
+          </div>
+          ${emotionHtml}
+        </div>`;
+    }).join('');
+  }
+
+  // ── Start / Stop ─────────────────────────────────────────────────────────
+  async function startDetection() {
+    if (running) return;
+    if (!cocoModel) await loadModels();
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } catch {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      } catch (err) {
+        alert('Camera access denied: ' + err.message);
+        return;
+      }
+    }
+
+    video.srcObject = stream;
+    await video.play();
+    placeholder.style.display = 'none';
+    video.style.display = 'block';
+
+    running = true;
+    paused  = false;
+    btnStart.disabled = true;
+    btnPause.disabled = false;
+    btnStop.disabled  = false;
+    setStatus('Running', 'running');
+
+    // Render loop (every frame)
+    rafId = requestAnimationFrame(renderFrame);
+
+    // Detection loop (every 300ms — not tied to rAF)
+    detectTimer = setInterval(runDetection, 300);
+  }
+
+  function stopDetection() {
+    running = false;
+    paused  = false;
+    clearInterval(detectTimer);
+    if (rafId) cancelAnimationFrame(rafId);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+
+    stream = null;
+    video.srcObject = null;
+    video.style.display = 'none';
+    placeholder.style.display = 'flex';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    lastPredictions = [];
+    seenObjects.clear();
+
+    objList.innerHTML = '<p class="empty-msg">No objects detected yet.</p>';
+    objCount.textContent = '0';
+    fpsLabel.textContent = '';
+    btnStart.disabled = false;
+    btnPause.disabled = true;
+    btnPause.textContent = '⏸ Pause';
+    btnStop.disabled  = true;
+    setStatus('Idle', '');
+  }
+
+  function togglePause() {
+    if (!running) return;
+
+    if (!paused) {
+      // Pause: freeze video on current frame, stop detection updates
+      paused = true;
+      video.pause();
+      fpsLabel.textContent = 'paused';
+      btnPause.textContent = '▶ Resume';
+      btnPause.style.background = '#14532d';
+      btnPause.style.color = '#86efac';
+      setStatus('Paused', 'loading');
+    } else {
+      // Resume: unfreeze video and restart detection
+      paused = false;
+      video.play();
+      fpsLabel.textContent = '';
+      btnPause.textContent = '⏸ Pause';
+      btnPause.style.background = '';
+      btnPause.style.color = '';
+      setStatus('Running', 'running');
+    }
+  }
+
+  btnStart.addEventListener('click', startDetection);
+  btnPause.addEventListener('click', togglePause);
+  btnStop.addEventListener('click',  stopDetection);
+
+  // Pre-load models on page open
+  loadModels();
 </script>
 </body>
 </html>
